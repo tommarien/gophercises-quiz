@@ -5,10 +5,12 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 )
 
 func main() {
 	csvFile := flag.String("csv", "problems.csv", "input csv file")
+	timeout := flag.Int("t", 30, "timeout in seconds")
 
 	flag.Parse()
 
@@ -20,7 +22,18 @@ func main() {
 
 	quiz := NewQuiz(problems)
 
-	quiz.Run()
+	finishedCh := make(chan (bool))
+
+	go func() {
+		quiz.Run()
+		finishedCh <- true
+	}()
+
+	select {
+	case <-finishedCh:
+	case <-time.After(time.Duration(*timeout) * time.Second):
+		fmt.Println("\nBad luck out of time")
+	}
 
 	quiz.PrintScore()
 }
